@@ -9,30 +9,30 @@ file(MAKE_DIRECTORY ${BIN_DIR})
 file(MAKE_DIRECTORY ${OBJ_DIR})
 
 # Define source and output paths
-set(ASM_FILE "${CMAKE_SOURCE_DIR}/src/main/nasm/hello.asm")
-set(OBJ_FILE "${OBJ_DIR}/hello.obj")
-set(EXE_FILE "${BIN_DIR}/hello.exe")
+set(ASM_FILE "${CMAKE_SOURCE_DIR}/src/main/nasm/main.asm")
+set(OBJ_FILE "${OBJ_DIR}/main.obj")
+set(EXE_FILE "${BIN_DIR}/main.exe")
 
 # Step 1: Assemble .asm to .obj
 add_custom_command(
     OUTPUT  ${OBJ_FILE}
     COMMAND nasm -f win64 -i ${CMAKE_SOURCE_DIR}/include -Dx64 ${ASM_FILE} -o ${OBJ_FILE}
     DEPENDS ${ASM_FILE}
-    COMMENT "[NASM] Assembling hello.asm -> hello.obj"
+    COMMENT "[NASM] Assembling main.asm -> main.obj"
 )
 
 # Step 2: Link .obj to .exe
 add_custom_command(
     OUTPUT  ${EXE_FILE}
-    COMMAND gcc -nostartfiles -nostdlib ${OBJ_FILE} -lkernel32 -o ${EXE_FILE}
+    COMMAND gcc -nostartfiles -nostdlib ${OBJ_FILE} -lkernel32 -luser32 -o ${EXE_FILE}
     DEPENDS ${OBJ_FILE}
-    COMMENT "[GCC] Linking hello.obj -> hello.exe"
+    COMMENT "[GCC] Linking main.obj -> main.exe"
 )
 
 # Define the final build target
 add_custom_target(hello ALL
     DEPENDS ${EXE_FILE}
-    COMMENT "[CMake] Build complete: hello.exe"
+    COMMENT "[CMake] Build complete: main.exe"
 )
 
 # Ensure CMake builds in the root-level build directory

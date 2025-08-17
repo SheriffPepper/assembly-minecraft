@@ -1,21 +1,21 @@
 [bits 64]
 
+default rel  ; Using RIP-relative address by default
+
+
 %include "definitions.inc"
 %include "libs/winapi.inc"
 
 ; Import statements
-extern GetStdHandle
-extern WriteFile
+extern MessageBoxA
 extern ExitProcess
+
 
 ; Constants of the application
     section .data
-message db "Hello, World!", 0x0d, 0x0a  ; Message to print
-message_length equ ($ - message)        ; Message length to print
-
-; Uninitialized statically allocated application variables
-    section .bss
-written resd 1  ; (u32) Count of data written to the console
+; Program strings
+title db "Minecraft", 0x00                                 ; Title of the window
+text  db "Hello from Minecraft Message Box window!", 0x00  ; Text inside the message box window
 
 
 ; Code of the application
@@ -23,7 +23,6 @@ written resd 1  ; (u32) Count of data written to the console
 
 ; List of export functions
 global main  ; Entry point
-
 
 main:
     ; Prologue: by Windows x64 calling convention before calling any function there are should be
@@ -52,21 +51,13 @@ main:
                                   ; on stack making it aligned, because this size was initially
                                   ; subtracted from an aligned offset.
 
-    ; Getting output handle to print to the console
-    mov ecx, STD_OUTPUT_HANDLE
-    call GetStdHandle
-    mov rbx, rax  ; Save handle to rbx
+    ; Creating Message Box window
+    xor rcx, rcx     ; Owner Window Handle (NULL -> no owner)
+    lea rdx, [text]  ; Text in the window
+    lea r8, [title]  ; Caption of the window
+    xor r9, r9       ; Flags of the Message Box window (0x00000000 -> OK button without an icon)
 
-    ; Stack wasn't changed – no need to change `rsp` again
-
-    ; Write data to the console synchronously
-    mov rcx, rbx                ; Console output handle
-    lea rdx, [rel message]      ; Message to print
-    mov r8d, message_length     ; Message length to print
-    lea r9, [rel written]       ; Number of bytes that was written to the console
-    mov qword [rsp + 32], null  ; Only is used in asynchronous I/O (param #4 has the address of 4 * 8 bytes = 32)
-
-    call WriteFile
+    call MessageBoxA
 
     ; Exit with exit code `0` – executed successfully
     xor ecx, ecx  ; X ^ X = 0

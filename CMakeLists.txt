@@ -24,7 +24,7 @@ add_custom_command(
 # Step 2: Link .obj to .exe
 add_custom_command(
     OUTPUT  ${EXE_FILE}
-    COMMAND gcc -nostartfiles -nostdlib ${OBJ_FILE} -lkernel32 -luser32 -o ${EXE_FILE}
+    COMMAND gcc -nostartfiles -nostdlib -o ${EXE_FILE} ${OBJ_FILE} -lkernel32 -luser32
     DEPENDS ${OBJ_FILE}
     COMMENT "[GCC] Linking main.obj -> main.exe"
 )

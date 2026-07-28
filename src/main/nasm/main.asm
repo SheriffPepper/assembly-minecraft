@@ -44,9 +44,9 @@ main:
     ; 0x0130  | Param 6 (if any)         |       48 (aligned)
     ;         +––––––––––––––––––––––––––+
     ;
-    ; By convension, the stack is aligned at the process start.
+    ; By convention, the stack is aligned at the process start.
 
-    ; Fulfilling the convension
+    ; Fulfilling the convention
     sub rsp, 0x30 - pointer@size  ; Before `call` instruction execution, 8-byte address is pushed
                                   ; on stack making it aligned, because this size was initially
                                   ; subtracted from an aligned offset.

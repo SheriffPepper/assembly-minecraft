@@ -9,6 +9,16 @@ STD_ERROR_HANDLE  equ 0xfffffff4  ; (unsigned '-12') Handle of the standard erro
 
 ; =============== user32 ===============
 
+;
+; Contains window class information.
+; It is used with the RegisterClassEx and GetClassInfoEx functions.
+;
+; The WindowClassEx structure is similar to the WindowClass structure.
+; There are two differences. WindowClassEx includes the 'size' member,
+; which specifies the size of the structure, and the 'icon' member,
+; which contains a handle to a small icon associated with the window class.
+;
+
 ; Icons of the Message Box window
 MessageBox.icon@EXCLAMATION equ 0x00000030  ; An exclamation-point icon
 MessageBox.icon@WARNING     equ 0x00000030

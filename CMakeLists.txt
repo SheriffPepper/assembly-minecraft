@@ -1,41 +1,55 @@
-cmake_minimum_required(VERSION 3.27)
-project(assembly_minecraft ASM_NASM)
+cmake_minimum_required(VERSION 3.20)
+project(assembly_minecraft LANGUAGES C ASM_NASM)
 
 # Set custom output directories (relative to project root)
-set(BUILD_DIR "${CMAKE_SOURCE_DIR}/build")
-set(BIN_DIR "${BUILD_DIR}/bin")
-set(OBJ_DIR "${BUILD_DIR}/tmp")
-file(MAKE_DIRECTORY ${BIN_DIR})
-file(MAKE_DIRECTORY ${OBJ_DIR})
+#set(BUILD_DIR "${CMAKE_SOURCE_DIR}/build")
+#set(BIN_DIR "${BUILD_DIR}/bin")
+#set(OBJ_DIR "${BUILD_DIR}/tmp")
+#file(MAKE_DIRECTORY ${BIN_DIR})
+#file(MAKE_DIRECTORY ${OBJ_DIR})
 
-# Define source and output paths
-set(ASM_FILE "${CMAKE_SOURCE_DIR}/src/main/nasm/main.asm")
-set(OBJ_FILE "${OBJ_DIR}/main.obj")
-set(EXE_FILE "${BIN_DIR}/main.exe")
+set(WINDOW_LIB_SOURCES)
 
-# Step 1: Assemble .asm to .obj
-add_custom_command(
-    OUTPUT  ${OBJ_FILE}
-    COMMAND nasm -f win64 -i ${CMAKE_SOURCE_DIR}/include -Dx64 ${ASM_FILE} -o ${OBJ_FILE}
-    DEPENDS ${ASM_FILE}
-    COMMENT "[NASM] Assembling main.asm -> main.obj"
+if ((NOT TARGET_OS AND WIN32) OR (TARGET_OS STREQUAL "WINDOWS"))
+    set(TARGET_OS "WINDOWS")
+    set(STD_LIBS
+        kernel32 user32 gdi32 opengl32
+    )
+    set(LINKER_PARAMS "-nostdlib" "-nostartfiles" "-Wl,--entry=main" "-Wl,--strip-all")
+    list(APPEND WINDOW_LIB_SOURCES
+        libs/window/src/main/nasm/win.window.x64.asm
+    )
+
+elseif ((NOT TARGET_OS AND UNIX AND NOT APPLE) OR (TARGET_OS STREQUAL "LINUX"))
+    set(TARGET_OS "LINUX")
+    set(STD_LIBS)
+    set(LINKER_PARAMS "-nostdlib" "-nostartfiles" "-Wl,-e=main" "-Wl,--strip-all")
+    list(APPEND WINDOW_LIB_SOURCES
+        libs/window/src/main/nasm/lin.window.x64.asm
+    )
+
+elseif (NOT TARGET_OS)
+    message(FATAL_ERROR "This OS is not supported yet")
+endif()
+
+message(STATUS ${TARGET_OS})
+message(STATUS ${WINDOW_LIB_SOURCES})
+
+add_library(Window STATIC
+    ${WINDOW_LIB_SOURCES}
 )
 
-# Step 2: Link .obj to .exe
-add_custom_command(
-    OUTPUT  ${EXE_FILE}
-    COMMAND gcc -nostartfiles -nostdlib -o ${EXE_FILE} ${OBJ_FILE} -lkernel32 -luser32
-    DEPENDS ${OBJ_FILE}
-    COMMENT "[GCC] Linking main.obj -> main.exe"
+add_executable(hello_triangle
+    src/main/nasm/com/mojang/rubydung/RubyDung.x64.code.asm
+    src/main/nasm/com/mojang/rubydung/RubyDung.x64.data.asm
 )
 
-# Define the final build target
-add_custom_target(hello ALL
-    DEPENDS ${EXE_FILE}
-    COMMENT "[CMake] Build complete: main.exe"
-)
+target_link_libraries(hello_triangle PRIVATE Window ${STD_LIBS})
 
-# Ensure CMake builds in the root-level build directory
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BIN_DIR})
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OBJ_DIR})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OBJ_DIR})
+
+set_target_properties(hello_triangle PROPERTIES LINKER_LANGUAGE C)
+
+add_compile_definitions("${TARGET_OS}" "x64" "SSE" "SSE2" "SSE4_1" "AVX")
+target_compile_options(Window PRIVATE "-i ${CMAKE_SOURCE_DIR}/include/libs/")
+target_compile_options(hello_triangle PRIVATE "-i ${CMAKE_SOURCE_DIR}/include/")
+target_link_options(hello_triangle PRIVATE ${LINKER_PARAMS})

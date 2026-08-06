@@ -35,7 +35,6 @@ win.entry:
     ; We need to return the value in `rax` as exit code
     sub rsp, SHADOW_SPACE + 8    ; Reserve Shadow Space required by Windows ABI
                                  ; And align stack to be 16-bytes pre-call aligned
-    and rsp, -16
     mov rcx, rax    ; Exit code
     call ExitProcess
 

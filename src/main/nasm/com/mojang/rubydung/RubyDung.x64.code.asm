@@ -43,7 +43,7 @@ main:
 
     ; On the main entry stack is odd-8-aligned
     ; Align to 16-byte alignment
-    sub rsp, 8
+    and rsp, -16
 
     ; --- Create the Window ---
     mov ecx, WIDTH
@@ -57,10 +57,17 @@ main:
     jz .exit
 
     ; One-time GL state - viewport has to match the window or you get letter boxing
-    xor ecx, ecx
-    xor edx, edx
-    mov r8d, WIDTH
-    mov r9d, HEIGHT
+    %ifdef WINDOWS
+        xor ecx, ecx
+        xor edx, edx
+        mov r8d, WIDTH
+        mov r9d, HEIGHT
+    %elifdef LINUX
+        xor edi, edi
+        xor esi, esi
+        mov edx, WIDTH
+        mov ecx, HEIGHT
+    %endif
 
     call glViewport
 
@@ -111,10 +118,12 @@ render:
     call glClearColor
 
     mov ecx, GL_COLOR_BUFFER_BIT
+    mov edi, GL_COLOR_BUFFER_BIT    ; Linux
     call glClear
 
     ; Triangle Drawing Block
     mov ecx, GL_TRIANGLES
+    mov edi, GL_TRIANGLES    ; Linux
     call glBegin
 
         ; glColor3f(1, 0, 0) - red, set once, all 3 vertices inherit it

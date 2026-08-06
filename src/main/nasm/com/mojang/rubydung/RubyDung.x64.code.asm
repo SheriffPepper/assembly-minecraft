@@ -9,7 +9,7 @@ default rel    ; Using RIP-relative addresses by default
 %include "definitions.inc"
 %include "libs/standard.inc"
 %include "libs/window/window.inc"
-%include "libs/opengl.inc"
+%include "libs/opengl/opengl.inc"
 
 
 %define WIDTH   900
@@ -61,22 +61,12 @@ main:
     jz .exit
 
     ; One-time GL state - viewport has to match the window or you get letter boxing
-    %ifdef WINDOWS
-        xor ecx, ecx
-        xor edx, edx
-        mov r8d, WIDTH
-        mov r9d, HEIGHT
-    %elifdef LINUX
-        xor edi, edi
-        xor esi, esi
-        mov edx, WIDTH
-        mov ecx, HEIGHT
-    %endif
+    xor edi, edi
+    xor esi, esi
+    mov edx, WIDTH
+    mov ecx, HEIGHT
 
-    ; @TODO: Get rid of this awful wrapper
-    sub rsp, 0x20
-    call glViewport
-    add rsp, 0x20
+    call OpenGL.Viewport
 
 .loop:
     call Window.pollEvents
@@ -110,9 +100,8 @@ jmp .loop
 render:
     ; Function doesn't take or return any values
 
-    ; Reserve Shadow Space
-    ; And align odd-8-aligned (post-call convention) stack to 16 bytes
-    sub rsp, 40
+    ; Align odd-8-aligned (post-call convention) stack to 16 bytes
+    sub rsp, 8
 
     ; glClearColor(0, 0, 0, 1) - black background
     xorps xmm0, xmm0
@@ -120,46 +109,44 @@ render:
     xorps xmm2, xmm2
     movss xmm3, [f32_one]
 
-    call glClearColor
+    call OpenGL.ClearColor
 
-    mov ecx, GL_COLOR_BUFFER_BIT
-    mov edi, GL_COLOR_BUFFER_BIT    ; Linux
-    call glClear
+    mov edi, GL_COLOR_BUFFER_BIT
+    call OpenGL.Clear
 
     ; Triangle Drawing Block
-    mov ecx, GL_TRIANGLES
-    mov edi, GL_TRIANGLES    ; Linux
-    call glBegin
+    mov edi, GL_TRIANGLES
+    call OpenGL.Begin
 
         ; glColor3f(1, 0, 0) - red, set once, all 3 vertices inherit it
         movss xmm0, [f32_one]
         xorps xmm1, xmm1
         xorps xmm2, xmm2
 
-        call glColor3f
+        call OpenGL.Color3f
 
         ; 3x glVertex3f, straight off triangle_vertices
         movss xmm0, [triangle_vertices + 0]
         movss xmm1, [triangle_vertices + 4]
         movss xmm2, [triangle_vertices + 8]
 
-        call glVertex3f
+        call OpenGL.Vertex3f
 
         movss xmm0, [triangle_vertices + 12]
         movss xmm1, [triangle_vertices + 16]
         movss xmm2, [triangle_vertices + 20]
 
-        call glVertex3f
+        call OpenGL.Vertex3f
 
         movss xmm0, [triangle_vertices + 24]
         movss xmm1, [triangle_vertices + 28]
         movss xmm2, [triangle_vertices + 32]
 
-        call glVertex3f
+        call OpenGL.Vertex3f
 
-    call glEnd
+    call OpenGL.End
     call Window.swapBuffers
 
     ; Release all the Shadow Space
-    add rsp, 40
+    add rsp, 8
     ret

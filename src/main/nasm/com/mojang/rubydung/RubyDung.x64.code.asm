@@ -32,18 +32,22 @@ global main    ; Entry point
 ;
 ; Main entry point.
 ;
-; [NOTE]: Requires the stack to be 16-bytes aligned.
+; [NOTE]: Requires the stack to be 16-bytes aligned (post-call).
 ;
 ; @convention  custom (Blanki)
 ; @features    x64
 ; @effects     stack use, read, writes
 ;
 main:
-    ; Functions doesn't take or return any values
-
-    ; On the main entry stack is odd-8-aligned
-    ; Align to 16-byte alignment
-    and rsp, -16
+    ;
+    ; This function requires the stack to be 16-bytes aligned inside of it (post-call).
+    ; Values above the passed stack pointer is considered "unreachable" and should not
+    ; be accessed (e.g. on Linux command-line arguments are passed via stack) as if it's
+    ; located at the highest '0xfff...ff8' address and accessing it would trigger SegFault.
+    ; Return value in `rax` register when returning from this function is considered
+    ; the exit code of the application and must be provided with 16-bytes aligned stack
+    ; register (pre-ret) even if it's not the same stack address.
+    ;
 
     ; --- Create the Window ---
     mov ecx, WIDTH
@@ -69,7 +73,10 @@ main:
         mov ecx, HEIGHT
     %endif
 
+    ; @TODO: Get rid of this awful wrapper
+    sub rsp, 0x20
     call glViewport
+    add rsp, 0x20
 
 .loop:
     call Window.pollEvents
@@ -86,11 +93,9 @@ jmp .loop
 .destroy:
     call Window.destroy
 
-.exit:  macro@exit
-
-    ; Program never reaches this point
-
-    ret    ; Anyways, miracle must be taken into account
+.exit:
+    xor eax, eax    ; Exit code
+    ret    ; Exit process
 
 
 ;

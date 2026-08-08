@@ -35,7 +35,7 @@ GL_TRIANGLES         equ  0x0004
 %elifdef LINUX
     ; Since functions' custom Calling Convention are basically the same as
     ; Linux's Calling Convention, we can just assign an alias
-    %define OpenGL.ClearColor  glClearColor
+    %define OpenGL.ClearColor  glClearColor wrt ..plt
 %endif
     ;
     ;   Calling convention:
@@ -62,7 +62,7 @@ GL_TRIANGLES         equ  0x0004
 %elifdef LINUX
     ; Since functions' custom Calling Convention are basically the same as
     ; Linux's Calling Convention, we can just assign an alias
-    %define OpenGL.Clear  glClear
+    %define OpenGL.Clear  glClear wrt ..plt
 %endif
     ;
     ;   Calling convention:
@@ -90,7 +90,7 @@ GL_TRIANGLES         equ  0x0004
 %elifdef LINUX
     ; Since functions' custom Calling Convention are basically the same as
     ; Linux's Calling Convention, we can just assign an alias
-    %define OpenGL.Viewport  glViewport
+    %define OpenGL.Viewport  glViewport wrt ..plt
 %endif
     ;
     ;   Calling convention:
@@ -117,7 +117,7 @@ GL_TRIANGLES         equ  0x0004
 %elifdef LINUX
     ; Since functions' custom Calling Convention are basically the same as
     ; Linux's Calling Convention, we can just assign an alias
-    %define OpenGL.Begin  glBegin
+    %define OpenGL.Begin  glBegin wrt ..plt
 %endif
     ;
     ;   Calling convention:
@@ -139,7 +139,7 @@ GL_TRIANGLES         equ  0x0004
 %elifdef LINUX
     ; Since functions' custom Calling Convention are basically the same as
     ; Linux's Calling Convention, we can just assign an alias
-    %define OpenGL.End  glEnd
+    %define OpenGL.End  glEnd wrt ..plt
 %endif
 
 
@@ -161,7 +161,7 @@ GL_TRIANGLES         equ  0x0004
 %elifdef LINUX
     ; Since functions' custom Calling Convention are basically the same as
     ; Linux's Calling Convention, we can just assign an alias
-    %define OpenGL.Color3f  glColor3f
+    %define OpenGL.Color3f  glColor3f wrt ..plt
 %endif
     ;
     ;   Calling convention:
@@ -189,7 +189,7 @@ GL_TRIANGLES         equ  0x0004
 %elifdef LINUX
     ; Since functions' custom Calling Convention are basically the same as
     ; Linux's Calling Convention, we can just assign an alias
-    %define OpenGL.Vertex3f  glVertex3f
+    %define OpenGL.Vertex3f  glVertex3f wrt ..plt
 %endif
     ;
     ;   Calling convention:

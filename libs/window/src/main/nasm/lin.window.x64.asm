@@ -133,7 +133,7 @@ Window.create:
 
     ; --- 1. Open Display ---
     xor edi, edi    ; NULL display name -> use $DISPLAY env var
-    call XOpenDisplay
+    call XOpenDisplay wrt ..plt
 
     ; Something went wrong: Couldn't open display
     test rax, rax
@@ -144,7 +144,7 @@ Window.create:
 
     ; --- 2. Get Default Screen ---
     mov rdi, r15
-    call XDefaultScreen
+    call XDefaultScreen wrt ..plt
 
     mov ebx, eax    ; ebx = screen index
 
@@ -153,7 +153,7 @@ Window.create:
     mov esi, ebx    ; Screen index
     lea rdx, [glx_attribs]
 
-    call glXChooseVisual
+    call glXChooseVisual wrt ..plt
 
     ; Something went wrong: Couldn't choose GLX Visual
     test rax, rax
@@ -165,7 +165,7 @@ Window.create:
 
     mov rbx, rax    ; rbx = Visual info (save to rbx, since it's its last usage as screen index)
 
-    call XRootWindow
+    call XRootWindow wrt ..plt
 
     mov rbp, rax    ; rbp = root window
 
@@ -175,7 +175,7 @@ Window.create:
     mov rdx, [rbx + XVisualInfo.visual]    ; Visual pointer
     xor ecx, ecx                           ; AllocNone
 
-    call XCreateColormap
+    call XCreateColormap wrt ..plt
 
     mov r8, rax    ; r8 = colormap
 
@@ -203,7 +203,7 @@ Window.create:
         lea rax, [win_attrs]
         mov qword [rsp + qword@size * 5], rax                         ; Arg 12: attributes
 
-        call XCreateWindow
+        call XCreateWindow wrt ..plt
 
     add rsp, qword@size * 6    ; Free argument stack space
 
@@ -219,14 +219,14 @@ Window.create:
     mov rsi, r12    ; Window
     mov rdx, r14    ; Title
 
-    call XStoreName
+    call XStoreName wrt ..plt
 
     ; --- 8. Setup WM_DELETE_WINDOW protocol (Catch close button) ---
     mov rdi, r15            ; Display
     lea rsi, [atom_name]    ; Atom name
     xor edx, edx            ; OnlyIfExists = false
 
-    call XInternAtom
+    call XInternAtom wrt ..plt
 
     ; Something went wrong: could not create an atom
     test rax, rax
@@ -239,21 +239,21 @@ Window.create:
     lea rdx, [wm_delete]    ; WM_DELETE_WINDOW atom array pointer
     mov ecx, 1              ; Number of protocols in the list
 
-    call XSetWMProtocols
+    call XSetWMProtocols wrt ..plt
 
     ; --- 9. Map (Show) Window ---
 
     mov rdi, r15    ; Display
     mov rsi, r12    ; Window
 
-    call XMapWindow
+    call XMapWindow wrt ..plt
 
     ; --- 10. Create GLX Context & Make Current ---
     mov rdi, r15    ; Display
     mov rsi, rbx    ; Visual info
     xor edx, edx    ; Render through X server
 
-    call glXCreateContext
+    call glXCreateContext wrt ..plt
 
     ; Something went wrong: Couldn't create OpenGL context
     test rax, rax
@@ -266,7 +266,7 @@ Window.create:
     mov rsi, r12    ; Window
     mov rdx, rax    ; GL context
 
-    call glXMakeCurrent
+    call glXMakeCurrent wrt ..plt
 
     mov byte [should_close], false
     mov eax, true    ; Everything is fine (return value)
@@ -308,23 +308,23 @@ Window.destroy:
         xor esi, esi    ; No Drawable
         xor edx, edx    ; No GL Context
 
-        call glXMakeCurrent
+        call glXMakeCurrent wrt ..plt
 
         ; Destroy GL context
         mov rdi, [display]        ; Window display
         mov rsi, [glx_context]    ; GL context
 
-        call glXDestroyContext
+        call glXDestroyContext wrt ..plt
 
         ; Destroy Window
         mov rdi, [display]    ; Window display
         mov rsi, [window]     ; Window
 
-        call XDestroyWindow
+        call XDestroyWindow wrt ..plt
 
         ; Close Display
         mov rdi, [display]
-        call XCloseDisplay
+        call XCloseDisplay wrt ..plt
 
         ; Destroy display to not segfault if called twice
         mov qword [display], null
@@ -354,7 +354,7 @@ Window.pollEvents:
 
     ; Get a number of event structures waiting in queue
     mov rdi, [display]
-    call XPending
+    call XPending wrt ..plt
 
     ; No events left
     test eax, eax
@@ -364,7 +364,7 @@ Window.pollEvents:
     mov rdi, [display]
     lea rsi, [event_buffer]
 
-    call XNextEvent
+    call XNextEvent wrt ..plt
 
     ; We only subscribed to one protocol message (WM_DELETE_WINDOW),
     ; so any ClientMessage at all means "close" - no need to compare atoms.
@@ -421,7 +421,7 @@ Window.swapBuffers:
         mov rdi, [display]
         mov rsi, [window]
 
-        call glXSwapBuffers
+        call glXSwapBuffers wrt ..plt
 
     add rsp, 8
     ret

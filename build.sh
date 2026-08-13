@@ -1,11 +1,8 @@
+#!/usr/bin/env bash
+
 # ============================================================
 #  Project layout
 # ============================================================
-
-VERSION_MAJOR="1"
-VERSION_MINOR="0"
-
-VERSION="$VERSION_MAJOR.$VERSION_MINOR"
 
 #
 # The project has pretty simple structure:

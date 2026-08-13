@@ -25,6 +25,10 @@ global win.entry
 ; @features    x64
 ; @effects     stack use
 ;
+; @author   Blanki
+; @version  hello-triangle
+; @since    Big Bang
+;
 win.entry:
     ; The stack pointer in Windows x64 is initialized to be 16-bytes aligned (pre-call)
     ; Making it odd-8-aligned after the call of the function (entry point) was executed.

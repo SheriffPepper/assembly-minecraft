@@ -22,6 +22,10 @@ global lin.entry
 ; @features    x64
 ; @effects     stack use
 ;
+; @author   Blanki
+; @version  hello-triangle
+; @since    Big Bang
+;
 lin.entry:
     ; The stack pointer in Linux x64 is initialized to be 16-bytes aligned (post-jump)
     ; Making our call to 'main' misalign the stack to odd-8-aligned in that function.

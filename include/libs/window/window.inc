@@ -1,3 +1,6 @@
+%ifndef __WINDOW_INCLUDE__
+%define __WINDOW_INCLUDE__
+
 ;
 ; Cross-platform "window" library interface.
 ;
@@ -75,3 +78,6 @@ extern Window.shouldClose
 ; @effects     stack use, reads
 ;
 extern Window.swapBuffers
+
+
+%endif; __WINDOW_INCLUDE__

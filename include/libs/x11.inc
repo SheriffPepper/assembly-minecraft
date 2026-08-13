@@ -1,3 +1,6 @@
+%ifndef __X11_INCLUDE__
+%define __X11_INCLUDE__
+
 ;
 ; X11/GLX constants + the couple of struct offsets we actually touch.
 ; Offsets hand-derived from Xlib.h/Xutil.h field order + x86-64 struct
@@ -82,3 +85,6 @@ GLX_BLUE_SIZE      equ  10
 GLX_ALPHA_SIZE     equ  11
 GLX_DEPTH_SIZE     equ  12
 GLX_STENCIL_SIZE   equ  13
+
+
+%endif; __X11_INCLUDE__

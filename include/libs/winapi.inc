@@ -1,3 +1,6 @@
+%ifndef __WINAPI_INCLUDE__
+%define __WINAPI_INCLUDE__
+
 ; Win API include file
 
 ; =============== x64 Calling Convention ===============
@@ -137,3 +140,6 @@ MessageBox@OK        equ 1
 MessageBox@RETRY     equ 4
 MessageBox@TRY_AGAIN equ 10
 MessageBox@YES       equ 6
+
+
+%endif; __WINAPI_INCLUDE__

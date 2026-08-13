@@ -1,3 +1,6 @@
+%ifndef __STANDARD_INCLUDE__
+%define __STANDARD_INCLUDE__
+
 ;
 ; Cross-platform "standard" library interface.
 ;
@@ -14,6 +17,8 @@
 %elifdef MACOS
     ; Register that is used for exit code
     %define EXIT_CODE  rdi
+%else
+    %error "Unsupported OS, try passing the definition '-D<OS>' to NASM"
 %endif
 
 
@@ -75,3 +80,6 @@
         syscall
     %endif
 %endmacro
+
+
+%endif; __STANDARD_INCLUDE__

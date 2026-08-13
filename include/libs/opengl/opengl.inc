@@ -1,3 +1,6 @@
+%ifndef __OPENGL_INCLUDE__
+%define __OPENGL_INCLUDE__
+
 ;
 ; Bare minimum OpenGL 1.x surface - immediate mode only,
 ; matches what RubyDung's fixed-function renderer actually needs so far.
@@ -197,3 +200,6 @@ GL_TRIANGLES         equ  0x0004
     ; @param y  xmm1 (as scalar f32)
     ; @param z  xmm2 (as scalar f32)
     ;
+
+
+%endif; __OPENGL_INCLUDE__

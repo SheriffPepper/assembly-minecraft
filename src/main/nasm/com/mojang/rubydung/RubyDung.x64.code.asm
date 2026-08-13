@@ -5,6 +5,10 @@ default rel    ; Using RIP-relative addresses by default
 ;
 ; RubyDung entry point.
 ;
+; @author  SheriffPepper
+; @version now
+; @since   forever
+;
 
 %include "definitions.inc"
 %include "libs/standard.inc"
@@ -37,6 +41,10 @@ global main    ; Entry point
 ; @convention  custom (Blanki)
 ; @features    x64
 ; @effects     stack use, read, writes
+;
+; @author   Blanki
+; @version  hello-triangle
+; @since    Big Bang
 ;
 main:
     ;
@@ -96,6 +104,10 @@ jmp .loop
 ; @convention  custom (Blanki)
 ; @features    x64
 ; @effects     stack use, reads
+;
+; @author   Blanki
+; @version  hello-triangle
+; @since    Big Bang
 ;
 render:
     ; Function doesn't take or return any values

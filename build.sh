@@ -22,6 +22,8 @@ MAIN_INCLUDES="include/"
 
 BASE_OPTIMIZATIONS_x64="SSE SSE2 SSE4.1 AVX"
 
+VERSION="1.0"
+
 # ============================================================
 #  Host detection
 # ============================================================
@@ -113,6 +115,7 @@ os_prefix() {
     case "$1" in
         Windows) echo "win" ;;
         Linux)   echo "lin" ;;
+        # macOS)   echo "mac" ;;
         # Unsupported OS
         *) return 1 ;;
     esac
@@ -123,6 +126,7 @@ os_define() {
     case "$1" in
         Windows) echo "WINDOWS" ;;
         Linux)   echo "LINUX"   ;;
+        # macOS)   echo "MACOS"   ;;
         # Unsupported OS
         *) return 1 ;;
     esac
@@ -134,6 +138,7 @@ is_os_specific() {
         # OS-specific prefixes
         "$(os_prefix "Windows")."*) return 0 ;;
         "$(os_prefix "Linux")."*)   return 0 ;;
+        # "$(os_prefix "macOS")."*)   return 0 ;;
         # No prefix / Unsupported OS
         *) return 1 ;;
     esac
@@ -255,6 +260,7 @@ zig_target() {
     case "$1" in
         Windows) echo -n "x86_64-windows-gnu" ;;
         Linux)   echo -n "x86_64-linux-gnu"   ;;
+        # macOS)   echo -n "x86_64-macos-gnu"   ;;
         # Unsupported OS
         *) return 1 ;;
     esac
@@ -263,8 +269,9 @@ zig_target() {
 # Format for NASM assembly
 nasm_format() {
     case "$1" in
-        Windows) echo -n "win64" ;;
-        Linux)   echo -n "elf64" ;;
+        Windows) echo -n "win64"   ;;
+        Linux)   echo -n "elf64"   ;;
+        # macOS)   echo -n "macho64" ;;
         # Unsupported OS
         *) return 1 ;;
     esac
@@ -600,6 +607,8 @@ target_build() {
     echo "[INFO] Linking the object files..."
 
     zig cc -target "$(zig_target "$TARGET_OS")" -nostartfiles -nostdlib "-Wl,--entry=$(entry_point "$TARGET_OS")" "-Wl,--strip-all" $SYS_LIBS -o "${BUILD_DIRECTORY}bin/$OUTPUT" ${lib_objs[@]} ${entry_objs[@]} ${dep_objs[@]} "${sys_libs[@]}" || return 1
+
+    echo "[INFO] Saving executable as '${BUILD_DIRECTORY}bin/$OUTPUT'..."
 }
 
 # ============================================================
@@ -627,16 +636,16 @@ cmd_help() {
             echo "  --build            directory to use as the build directory (default: '$BUILD_DIR')"
             echo "  --optimizations    comma-separated CPU extension list, e.g. '--optimizations=sse4.2,avx512f'"
             echo "  --output, -o       output file name"
-            echo "  --sys-libs         directory to use as the system includes when you try to build the project for other OSes"
+            echo "  --sys-libs         directory to use as the system includes when cross-compiling"
             echo "  --target-arch      target architecture to build for (x64; only option for now)"
-            echo "  --target-os        target OS to build for (Windows | Linux | macOS, default: Host OS)"
+            echo "  --target-os        target OS to build for (Windows | Linux, default: Host OS)"
             echo ""
             echo "Run 'build help <topic>' for more info" ;;
         # Topics
         help)
             echo "Ugh...try 'build help', it already shows you everything..." ;;
         clean)
-            echo "build clean [<div>]    cleans the building directory by deleting it."
+            echo "build clean [<dir>]    cleans the building directory by deleting it."
             echo "                       By default the build directory is in '$BUILD_DIR', but you can rewrite it with the optional parameter." ;;
         targets)
             echo "build targets    lists all the available targets to build."
@@ -662,14 +671,14 @@ cmd_help() {
         --output|-o)
             echo "--output  <filename>    overrides the default binary name for the target being built." ;;
         --sys-libs)
-            echo "--sys-libs  <dir>    uses the directory as the system library include directory for linker to use"
-            echo "                     in case you try to cross-compile the project for a platform other than your host one." ;;
+            echo "--sys-libs  <dir>    uses the directory as the system library include directory for linker"
+            echo "                     in case you cross-compile the project for a platform other than your host one." ;;
         --target-arch)
             echo "--target-arch  <x64>    Architecture you're building the project for (aliases like \"x86-64\", \"amd64\" work)."
             echo "                        The \"x64\" is the only supported value right now." ;;
         --target-os)
-            echo "--target-os  <Windows|Linux|macOS>    Operating System you're building the project for (aliases like \"win64\", \"WIN\" work)."
-            echo "                                      Defaults to the OS running this script (may be inaccurate, please use this parameter to specify the OS)." ;;
+            echo "--target-os  <Windows|Linux>    Operating System you're building the project for (aliases like \"win64\", \"WIN\" work)."
+            echo "                                Defaults to the OS running this script (may be inaccurate, please use this parameter to specify the OS)." ;;
         *) echo "error: no help manual for '$topic'. Try 'build help'." >&2 ; exit 1 ;;
     esac
 }

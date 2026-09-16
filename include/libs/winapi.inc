@@ -23,9 +23,11 @@ STACK_PARAM#11 equ SHADOW_SPACE + 7 * 8
 ; =============== kernel32 ===============
 
 ; Standard handle types:
-STD_INPUT_HANDLE  equ 0xfffffff6  ; (unsigned '-10') Handle of the standard input  (e.g., console input)
-STD_OUTPUT_HANDLE equ 0xfffffff5  ; (unsigned '-11') Handle of the standard output (e.g., console output)
-STD_ERROR_HANDLE  equ 0xfffffff4  ; (unsigned '-12') Handle of the standard error  (e.g., console output)
+STD_INPUT_HANDLE   equ  -10    ; (sign-extended '0xf6') Handle of the standard input  (e.g., console input)
+STD_OUTPUT_HANDLE  equ  -11    ; (sign-extended '0xf5') Handle of the standard output (e.g., console output)
+STD_ERROR_HANDLE   equ  -12    ; (sign-extended '0xf4') Handle of the standard error  (e.g., console output)
+
+INVALID_HANDLE  equ  -1    ; (sign-extended '0xff') Invalid value for handle, meaning some brutal failure
 
 ; =============== gdi32 ===============
 

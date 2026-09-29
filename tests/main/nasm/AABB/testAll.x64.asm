@@ -3,17 +3,17 @@
 default rel    ; Using RIP-relative addresses by default
 
 
-; "AABB" inter-testing data
-    section .data
-; The number of tests failed
-testsFailed:  dd  0
+%include "definitions.inc"
+%include "libs/testing/framework.inc"
+
+test_module TEST#AABB, "AABB class testing module"
 
 
 ; "AABB" all functions testing implementation
     section .text
 
 ; List of imported functions
-extern test#1
+extern @testblock(AABB.new)
 
 ; List of exported functions
 global testAll
@@ -26,8 +26,15 @@ global testAll
 ; (But let's keep it simple, and call it according to the high-level analog)
 ;
 testAll:
-    call test#1    ; Returns '1' if test is failed
-    add dword [testsFailed], eax
+    ; This test will return 0 in 'rax' if all the cases passed,
+    ; And the pointer to the failure structure, if something went wrong
+    call @testblock(AABB.new)
 
-    mov eax, dword [testsFailed]
-    ret    ; Exit with the number of tests failing being the exit code
+    test eax, eax
+    jz .exit
+
+    ; Something went wrong: fix the 'eax' to be an exit code
+    mov eax, 1
+
+.exit:
+    ret

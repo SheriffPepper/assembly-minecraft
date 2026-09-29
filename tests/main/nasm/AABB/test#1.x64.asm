@@ -3,7 +3,7 @@
 default rel    ; Using RIP-relative addresses by default
 
 %include "definitions.inc"
-%include "testing/framework.inc"
+%include "libs/testing/framework.inc"
 
 test_module TEST#AABB
 
@@ -66,7 +66,7 @@ TEST AABB.new, "standard function", 1
             align 16    ; Make sure the AABB structure is 16-byte aligned in memory
             @correct(minCorner):
                 @param(minX):  dd  0.0
-                @param(minX):  dd  0.0
+                @param(minY):  dd  0.0
                 @param(minZ):  dd  0.0
                                dd  0.0    ; Padding for the packed version
             @correct(maxCorner):

@@ -8,25 +8,16 @@
 ; and even scatter them across different files.
 ; To open the Test Module namespace in a different file use "test_module_defined" macro.
 ;
-%imacro test_module 1
+%imacro test_module 1-2
     __create_module _TEST_, %1
 
     ; Create the Test Module name as a string you can use later
-    %defstr %%namestr  %1
-        @string @module.name%+.name, %%namestr
-        global  @module.name%+.name    ; Export the name for global use
-    %undef  %%namestr
-%endmacro
-
-
-%imacro test_module 1
-    __create_module _TEST_, %1
-
-    ; Create the Test Module name as a string you can use later
-    %defstr %%namestr  %1
-        @string %[@module.name]@name, %%namestr
-        global  %[@module.name]@name    ; Export the name for global use
-    %undef  %%namestr
+    %if %0 == 2
+        %defstr %%namestr  %2
+            @string %[@module.name]@name, %%namestr
+            global  %[@module.name]@name    ; Export the name for global use
+        %undef  %%namestr
+    %endif
 %endmacro
 
 

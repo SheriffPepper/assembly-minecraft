@@ -8,7 +8,6 @@ default rel    ; Using RIP-relative addresses by default
 ; anywhere else in the codebase, that's a bug.
 ;
 
-%include "../definitions.inc"
 %include "winapi.inc"
 
 
@@ -85,11 +84,11 @@ print#out:
 
     sub rsp, SHADOW_SPACE + 16    ; Reserve Shadow Space and space for stack parameter required by Windows ABI
 
-    mov rdx, rsi                             ; Message to print
-    mov r8d, ecx                             ; Message length to print
-    mov rcx, rax                             ; Standard Output Handle
-    lea r9, [written]                        ; Number of bytes that was written to the console
-    mov qword [rsp + STACK_PARAM#4], null    ; Only used in asynchronous I/O
+    mov rdx, rsi                          ; Message to print
+    mov r8d, ecx                          ; Message length to print
+    mov rcx, rax                          ; Standard Output Handle
+    lea r9, [written]                     ; Number of bytes that was written to the console
+    mov qword [rsp + STACK_PARAM#4], 0    ; Only used in asynchronous I/O
 
     call WriteFile
 
@@ -100,7 +99,7 @@ print#out:
     jnz .done    ; No errors occurred
 
     ; Disaster mitigation: Disable output entirely if something happens
-    mov qword [stdout_handle], null
+    mov qword [stdout_handle], 0
     xor eax, eax    ; Return 0 bytes written
 
 .done:

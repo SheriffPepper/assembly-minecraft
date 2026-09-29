@@ -1,7 +1,11 @@
 %ifndef __DEFINITIONS_INCLUDE__
 %define __DEFINITIONS_INCLUDE__
 
-%include "libs/core/module.inc"
+%ifdef LIBRARY
+    %include "core/module.inc"
+%else
+    %include "libs/core/module.inc"
+%endif
 
 ; Standard definitions include file
 
@@ -72,14 +76,6 @@ u64.MAX_BUFFER_SIZE#hex  equ  16
 %ifndef x64
     %error "This code supports only 'x64' architecture, please use different files to compile the project, or pass the '-Dx64' definition to NASM"
 %endif
-
-
-;
-; Defines the name of the current Module
-;
-%imacro module 1
-    __create_module _, %1
-%endmacro
 
 
 %endif; __DEFINITIONS_INCLUDE__

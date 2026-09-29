@@ -98,4 +98,4 @@
 %endmacro
 
 
-%nedif; __CORE_DECORATORS_INCLUDE__
+%endif; __CORE_DECORATORS_INCLUDE__

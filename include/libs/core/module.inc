@@ -33,6 +33,14 @@
 %endmacro
 
 
+;
+; Defines the name of the current Module
+;
+%imacro module 1
+    __create_module _, %1
+%endmacro
+
+
 %imacro end_module 0
     ; We can't close a module if it's not open (or doesn't have a type)
     %ifndef __MODULE__

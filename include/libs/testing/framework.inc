@@ -1,6 +1,8 @@
 %ifndef __TESTING_FRAMEWORK_INCLUDE__
 %define __TESTING_FRAMEWORK_INCLUDE__
 
+
+%include "definitions.inc"
 %include "libs/core/module.inc"
 %include "libs/core/decorators.inc"
 

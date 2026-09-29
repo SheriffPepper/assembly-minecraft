@@ -1,34 +1,41 @@
 %ifndef __TESTING_FIXTURE_INCLUDE__
 %define __TESTING_FIXTURE_INCLUDE__
 
-%define @fixture.current        @fixture(@module.name, __TEST_NAME__)
-%define @fixture(test)          @fixture(@module.name, test)
+
+%define @fixture.current        @fixture(__TEST_MODULE_NAME__, __TEST_NAME__)
+%define @fixture(test)          @fixture(__TEST_MODULE_NAME__, test)
 %define @fixture(module, test)  @testblock(module, test)%+@context
 
 %define @fixture.failure  @fixture.current%+.failure
 %define @fixture.regs     @fixture.current%+.regs
 %define @fixture.scratch  @fixture.current%+.scratch
 
-%define @reg(reg)       @fixture.regs + __regs.%+reg
-;%define @reg.name(reg)  __REGISTER_%+reg%+@name
+FIXTURE_SCRATCH_SIZE  equ  256
 
-%assign __TEMP_COUNTER__  0
-%macro __assign_gp_reg 1+
+%define @reg(reg)  @fixture.regs + __regs.%+reg
+
+
+%macro __assign_gp_reg 1-*
     %rep %0
-        __regs.%1  equ  __TEMP_COUNTER__
+        __regs.%1  equ  %[__TEMP_REG_COUNTER__]
         %rotate 1
     %endrep
 
-    %assign __TEMP_COUNTER__  __TEMP_COUNTER__ + 8
+    %assign __TEMP_REG_COUNTER__  __TEMP_REG_COUNTER__ + 8
 %endmacro
-%macro __assign_vec_reg 1+
-    %rep %0
-        __regs.%1  equ  __TEMP_COUNTER__
-        %rotate 1
-    %endrep
 
-    %assign __TEMP_COUNTER__  __TEMP_COUNTER__ + 32
-%endmacro
+%assign __TEMP_REG_COUNTER__  0
+
+%assign __TEMP_REG_NUMBER__  0
+%rep 16
+    __regs.zmm%[__TEMP_REG_NUMBER__]  equ  __TEMP_REG_COUNTER__
+    __regs.ymm%[__TEMP_REG_NUMBER__]  equ  __TEMP_REG_COUNTER__
+    __regs.xmm%[__TEMP_REG_NUMBER__]  equ  __TEMP_REG_COUNTER__
+
+    %assign __TEMP_REG_COUNTER__  __TEMP_REG_COUNTER__ + 64
+    %assign __TEMP_REG_NUMBER__   __TEMP_REG_NUMBER__  + 1
+%endrep
+%undef  __TEMP_REG_NUMBER__
 
 __assign_gp_reg rax, eax, ax, al
 __assign_gp_reg rbx, ebx, bx, bl
@@ -47,25 +54,7 @@ __assign_gp_reg r13, r13d, r13w, r13b
 __assign_gp_reg r14, r14d, r14w, r14b
 __assign_gp_reg r15, r15d, r15w, r15b
 
-__assign_vec_reg xmm0,  ymm0
-__assign_vec_reg xmm1,  ymm1
-__assign_vec_reg xmm2,  ymm2
-__assign_vec_reg xmm3,  ymm3
-__assign_vec_reg xmm4,  ymm4
-__assign_vec_reg xmm5,  ymm5
-__assign_vec_reg xmm6,  ymm6
-__assign_vec_reg xmm7,  ymm7
-__assign_vec_reg xmm8,  ymm8
-__assign_vec_reg xmm9,  ymm9
-__assign_vec_reg xmm10, ymm10
-__assign_vec_reg xmm11, ymm11
-__assign_vec_reg xmm12, ymm12
-__assign_vec_reg xmm13, ymm13
-__assign_vec_reg xmm14, ymm14
-__assign_vec_reg xmm15, ymm15
-
-%assign __REGS_TOTAL_SIZE  __TEMP_COUNTER__
-%undef __TEMP_COUNTER__
+%assign __regs.size  __TEMP_REG_COUNTER__
 
 
 %endif; __TESTING_FIXTURE_INCLUDE__

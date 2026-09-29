@@ -12,6 +12,8 @@
         __unlink_module %1, "Module was terminated by the definition of another Module with a different type!"
     %endif
 
+    ; Will break if Module Name already exists
+    ; Please don't create them manually, use macros instead
     %define %[@module.type]  %1
     %define %[@module.name]  %2
 %endmacro
@@ -19,8 +21,9 @@
 
 %macro __unlink_module 2
     ; Turn the definition into a string
-    %defstr %%__TEMP_MODULE__ %[@module.type]
+    %defstr %%__TEMP_MODULE__  %[@module.type]
     %if %%__TEMP_MODULE__ != %1
+        ; Print the warning message if module types are different
         %warning %2
     %endif
     %undef  %%__TEMP_MODULE__
@@ -37,8 +40,8 @@
     %endif
 
     ; Clean the module preprocessor variables
-    %defstr %%__TEMP_MODULE__ %[@module.type]
-    __unlink_module %%__TEMP_MODULE__, "Module was terminated...and it seems that it was not equal to itself... How did you do that?"
+    %defstr %%__TEMP_MODULE__  %[@module.type]
+    __unlink_module %%__TEMP_MODULE__, "Module was terminated...and it seems that its type was not equal to itself... How did you do that?"
     %undef  %%__TEMP_MODULE__
 %endmacro
 
@@ -62,7 +65,7 @@
 ; Defines the label as "external" if the "implementation identifier" wasn't present,
 ; and as "global" exported one if the "implementation identifier" was present.
 ;
-%macro define 1
+%imacro define 1
     %ifdef __%[@module.name]_impl__
         global %1    ; Global label for implementation code
     %else

@@ -14,6 +14,13 @@ FIXTURE_SCRATCH_SIZE  equ  256
 
 %define @reg(reg)  @fixture.regs + __regs.%+reg
 
+;
+; Scratch area of the fixture ('FIXTURE_SCRATCH_SIZE' bytes) is split into the 64-byte slots,
+; one slot fits a whole 'zmm' register. Assertions never nest, so they all share the same slots.
+; (the 'TestFailure' 'actual' & 'expected' fields are used as the temporal storage by assertions as well)
+;
+%define @scratch.slot(n)  (@fixture.scratch + (n) * 64)
+
 
 %macro __assign_gp_reg 1-*
     %rep %0

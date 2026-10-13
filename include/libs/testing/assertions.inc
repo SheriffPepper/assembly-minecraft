@@ -1,6 +1,8 @@
 %ifndef __TEST_ASSERTIONS_INCLUDE__
 %define __TEST_ASSERTIONS_INCLUDE__
 
+%include "libs/testing/assertions/assertion_computed.inc"
+%include "libs/testing/assertions/assertion_packed.inc"
 
 ;
 ; Assertion macros here represent debugging primitives used to enforce structural and
@@ -18,6 +20,36 @@
 ;
 
 
+;
+; Stops the assembly if the assertion is used outside of a Test Block.
+;
+;   @param who  name of the assertion that asks (used in the error messages)
+;
+%macro __t_assert_requirements 1
+    %defstr %%who  %1
+    %strcat %%no_module  %%who, ": First define the Test Module, and then we'll talk"
+    %strcat %%no_test    %%who, ": Can't run 'ASSERT_*' directives outside the Test Block! Did you forget 'TEST'?"
+
+    ; Assertions must work in Test Block only
+    __t_require_module %%no_module
+    __t_require_test   %%no_test
+
+    %undef  %%who
+    %undef  %%no_module
+    %undef  %%no_test
+%endmacro
+
+
+;
+; Fills the 'TestFailure' object and leaves the Test Block.
+; The caller must have already written 'actual' & 'expected' values (if there are any).
+;
+; Clobbers 'rax' (only on the failure path, the test is over anyway).
+;
+;   @param kind  TEST_FAILURE_*
+;   @param type  TEST_VALUE_TYPE_*
+;   @param n     description of the value: string literal, or the label of a string
+;
 %macro __test_fail 3    ; <kind>, <type>, <name>
     ; If the name is string, we must save the string
     %ifstr %3
@@ -42,125 +74,168 @@
 %endmacro
 
 
-%macro ASSERT_ALIGNED_REGISTER 2
-    %defstr %%__TEMP_REG_STRING__  %1
-    ASSERT_ALIGNED_REGISTER %1, %2, %%__TEMP_REG_STRING__
-    %undef  %%__TEMP_REG_STRING__
+;
+; Defines the description of the checked value:
+; the one the user has given, or (if there's none) the text of the operand itself.
+;
+;   @param out      name of the single-line macro to define
+;   @param given    description given by the user (may be empty)
+;   @param operand  operand to take the name from
+;
+%macro __t_describe 3
+    %ifempty %2
+        %defstr %1  %3
+    %else
+        %xdefine %1  %2
+    %endif
 %endmacro
 
 
-%macro ASSERT_ALIGNED_REGISTER 3
-    ; Assertions must work in Test Block only
-    %ifnctx __test_block__
-        %fatal "Can't run 'ASSERT_*' directives outside the Test Block! Did you forget 'TEST'?"
+;
+; Finds out the size keyword written in front of the memory operand ('dword [x]', 'f32 [x]', 'v128 [x]', etc.),
+; Defines the single-line macro '%1' as: 'byte', 'word', 'dword', 'qword', 'oword', 'yword', 'zword', or 'none'.
+;
+;   @param out      name of the single-line macro to define
+;   @param operand  memory operand
+;
+%macro __t_mem_size 2
+    %defstr %%text   %[%2]           ; Expand the aliases ('f32' -> 'dword')
+    %substr %%word5  %%text  1, 5
+    %substr %%word4  %%text  1, 4
+
+    %ifidni %%word5, "dword"
+        %xdefine %1  dword
+    %elifidni %%word5, "qword"
+        %xdefine %1  qword
+    %elifidni %%word5, "oword"
+        %xdefine %1  oword
+    %elifidni %%word5, "yword"
+        %xdefine %1  yword
+    %elifidni %%word5, "zword"
+        %xdefine %1  zword
+    %elifidni %%word4, "word"
+        %xdefine %1  word
+    %elifidni %%word4, "byte"
+        %xdefine %1  byte
+    %else
+        %xdefine %%%1  none
     %endif
 
-    test %1, %2 - 1
-    jz %%passed    ; Register is aligned
+    %undef  %%text
+    %undef  %%word5
+    %undef  %%word4
+%endmacro
 
-    ; Register was not aligned:
-    ; Construct the TestFailure object
+
+%macro __t_assert_gp_preserved 2
+    ; General-purpose register check
+    cmp %1, [@reg(%1)]
+    je %%passed    ; Register was preserved
+
+    ; Register was not preserved:
+    ; Construct the 'TestFailure' object
     mov [@failure.actual], %1
+    mov %1, [@reg(%1)]
     mov [@failure.expected], %1
-    and @reg.size(%1) [@failure.expected], -%2
 
-    ; Register was not aligned
-    __test_fail TEST_FAILURE_ALIGNED, @reg.type(%1), %3
+    ; Preserved register was not saved during testing
+    __test_fail TEST_FAILURE_PRESERVED, @reg.type(%1), %2
 
 %%passed:
 %endmacro
 
 
-%macro ASSERT_ALIGNED_STACK 1
-    ASSERT_ALIGNED_REGISTER rsp, %1, "stack pointer"
+%macro __t_assert_xymm_preserved 2
+    ; Vector 'xmm / ymm' register check
+    ; Save the whole register (128-bit instructions below its upper half) to a temporal storage
+    vmovaps [@failure.actual], @reg.get_full(%1)
+
+    ; Check the register value
+    vxorps %1, %1, [@reg(%1)]    ; If values are equal, 'xmm / ymm' register will become all zeroes
+    vptest %1, %1                ; Test the result against itself
+    jz %%passed    ; Value was preserved
+
+    ; Register was not preserved:
+    ; Construct the 'TestFailure' object
+    vmovaps %1, [@reg(%1)]
+    vmovaps [@failure.expected], %1
+
+    ; Preserved register was not saved during testing
+    __test_fail TEST_FAILURE_PRESERVED, @reg.type(%1), %2
+
+%%passed:
+    ; Restore the value of the register
+    vmovaps @reg.get_full(%1), [@failure.actual]
+%endmacro
+
+
+%macro __t_assert_zmm_preserved 2
+    ; Vector 'zmm' register check
+    vpcmpeqq k0, %1, [@reg(%1)]    ; Safely overwrite k0 mask register
+    kortestw k0, k0                ; Test the 'k0' against itself
+    jc %%passed    ; Value was preserved
+
+    ; Register was not preserved:
+    ; Construct the 'TestFailure' object
+    vmovaps [@failed.actual], %1
+    vmovaps %1, [@reg(%1)]
+    vmovaps [@failed.expected], %1
+
+    ; Preserved register was not saved during testing
+    __test_fail TEST_FAILURE_PRESERVED, @reg.type(%1), %2
+
+%%passed:
+    ; We don't need to restore anything,
+    ; Since we've overwrote only the 'k0'
 %endmacro
 
 
 %macro ASSERT_PRESERVED_REGISTER 2
     ; Assertions must work in Test Block only
-    %ifnctx __test_block__
-        %fatal "Can't run 'ASSERT_*' directives outside the Test Block! Did you forget 'TEST'?"
+    __t_assert_requirements ASSERT_PRESERVED_REGISTER
+
+    __t_operand_kind %%kind, %1
+    __t_describe %%desc, %2, %1
+
+    ; Choose the implementation based on the register type
+    %ifidn %%kind, gpr
+        ; General-purpose registers implementation
+        __t_assert_gp_preserved %1, %%desc
+    %elifidn %%kind, xmm
+        ; AVX-compatible vector registers implementation
+        __t_require_AVX ASSERT_PRESERVED_REGISTER
+        __t_assert_xymm_preserved %1, %%desc
+    %elifidn %%kind, ymm
+        ; AVX-compatible vector registers implementation
+        __t_require_AVX ASSERT_PRESERVED_REGISTER
+        __t_assert_xymm_preserved %1, %%desc
+    %elifidn %%kind, zmm
+        ; AVX-512f is the baseline for ZMM-register preservation check
+        __t_require_AVX512f ASSERT_PRESERVED_REGISTER
+        __t_assert_zmm_preserved %1, %%desc
+    %else
+        %fatal "ASSERT_PRESERVED_REGISTER: expected a general-purpose or a vector register"
     %endif
 
-    %ifn @reg.is_vec(%1)
-        ; General-purpose register check
-        cmp %1, [@reg(%1)]
-        je %%passed    ; Register was preserved
-
-        ; Register was not preserved:
-        ; Construct the TestFailure object
-        mov [@failure.actual], %1
-        mov %1, [@reg(%1)]
-        mov [@failure.expected], %1
-    %elif @reg.is_xmm(%1)
-        ; Vector 'xmm' register check
-        movaps [@fixture.scratch], xmm7    ; Save the 'xmm7' to scratch space to use as temp-storage
-        movaps xmm7, %1    ; Move the register value to the 'xmm7' to not clobber the register with comparison mask
-
-        ; Save the 'rax' register to not clobber it with mask
-        mov [@fixture.scratch + 16], rax
-
-        vpcmpeqb xmm7, [@reg(%1)]    ; Get the comparison mask
-        vpmovmskb eax, xmm7          ; Load the mask into 'eax' to check the equality
-        cmp eax, 0xFFFF              ; If the full mask, values are equal -> register was preserved
-
-        ; Restore the values in 'xmm7' & 'rax'
-        movaps xmm7, [@fixture.scratch]
-        mov rax, [@fixture.scratch + 16]
-        je %%passed    ; Register was preserved
-
-        ; Register was not preserved:
-        ; Construct the TestFailure object
-        movaps [@failure.actual], %1
-        movaps %1, [@reg(%1)]
-        movaps [@failure.expected], %1
-    %elif @reg.is_ymm(%1)
-        ; Vector 'ymm' register check
-        movaps [@fixture.scratch], ymm7    ; Save the 'ymm7' to scractch space to use as temp-storage
-        movaps xmm7, @reg.get_xmm(%1)      ; Move the low 128-bit register value to the 'xmm7' to not clobber the register with comparison mask
-
-        ; Save the 'rax' register to not clobber it with mask
-        mov [@fixture.scratch + 32], rax
-
-        ; Check the low 128-bit register value
-        vpcmpeqb xmm7, [@reg(%1)]    ; Get the comparison mask
-        vpmovmskb eax, xmm7          ; Load the mask into 'eax' to check the equality
-        cmp eax, 0xFFFF              ; If the full mask, values are equal -> low 128-bit register value was preserved
-
-        jne %%failed    ; Register was not preserved
-
-        ; Check the high 128-bit register value
-        vextractf128 xmm7, %1, 1     ; Extract high 128-bit register value
-
-        vpcmpeqb xmm7, [@reg(%1) + 16]    ; Get the comparison mask
-        vpmovmskb eax, xmm7               ; Load the mask into 'eax' to check the equality
-        cmp eax, 0xFFFF                   ; If the full mask, values are equal -> high 128-bit register value was preserved
-
-        ; Restore the values in 'ymm7' & 'rax'
-        movaps ymm7, [@fixture.scratch]
-        mov rax, [@fixture.scratch + 32]
-        je %%passed
-    %%failed:
-        ; Register was not preserved:
-        ; Construct the TestFailure object
-        movaps [@failure.actual], %1
-        movaps %1, [@reg(%1)]
-        movaps [@failure.expected], %1
-    %elif @reg.is_zmm(%1)
-        %fatal "TODO: implement the ZMM-register preservation check"
-    %endif
-
-    ; Preserved register was not saved during testing
-    __test_fail TEST_FAILURE_PRESERVED, @reg.type(%1), %2
-
-    %%passed:
+    %undef %%kind
+    %undef %%desc
 %endmacro
 
 
+;
+; Checks that the stack pointer and the frame base are the same as they were when 'PRESERVE_STACK' was called.
+;
 %macro ASSERT_PRESERVED_STACK 0
+    ; Assertions must work in Test Block only
+    __t_assert_requirements ASSERT_PRESERVED_STACK
+
     ASSERT_PRESERVED_REGISTER rsp, "stack pointer"
     ASSERT_PRESERVED_REGISTER rbp, "stack frame pointer"
 %endmacro
+
+
+%include "libs/testing/assertions/assertion_computed.inc"
+%include "libs/testing/assertions/assertion_packed.inc"
 
 
 %macro __ASSERT_EQUAL_PACKED 4

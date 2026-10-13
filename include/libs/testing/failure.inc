@@ -20,11 +20,24 @@ endstruc
 %define @failure.expected  @fixture.failure + TestFailure.expected
 
 
-TEST_FAILURE_ALIGNED    equ  0    ; Some pointer was not aligned properly
-TEST_FAILURE_PRESERVED  equ  1    ; Some value was not preserved
-TEST_FAILURE_BOOLEAN    equ  2    ; Value has wrong boolean value
-TEST_FAILURE_EQUAL      equ  3    ; Value is not equal to another value
-TEST_FAILURE_NOT_EQUAL  equ  4    ; Value is equal to something it shouldn't be
+TEST_FAILURE_ALIGNED           equ  0     ; Some pointer was not aligned properly
+TEST_FAILURE_PRESERVED         equ  1     ; Some value was not preserved
+TEST_FAILURE_BOOLEAN           equ  2     ; Value has wrong boolean value
+TEST_FAILURE_EQUAL             equ  3     ; Value is not equal to another value
+TEST_FAILURE_NOT_EQUAL         equ  4     ; Value is equal to something it shouldn't be
+TEST_FAILURE_LESS              equ  5     ; Value is not less than the expected one (signed)
+TEST_FAILURE_LESS_OR_EQUAL     equ  6     ; Value is not less or equal to the expected one (signed)
+TEST_FAILURE_GREATER           equ  7     ; Value is not greater than the expected one (signed)
+TEST_FAILURE_GREATER_OR_EQUAL  equ  8     ; Value is not greater or equal to the expected one (signed)
+TEST_FAILURE_BELOW             equ  9     ; Value is not below the expected one (unsigned)
+TEST_FAILURE_BELOW_OR_EQUAL    equ  10    ; Value is not below or equal to the expected one (unsigned)
+TEST_FAILURE_ABOVE             equ  11    ; Value is not above the expected one (unsigned)
+TEST_FAILURE_ABOVE_OR_EQUAL    equ  12    ; Value is not above or equal to the expected one (unsigned)
+TEST_FAILURE_ONE_OF            equ  13    ; Scalar value is none of the lanes of the expected vector
+
+; Packed assertions OR this flag into the 'kind' when the condition had to hold for at least ONE lane
+; Without the flag it had to hold for EVERY lane (the 'ALL' mode, which is the default one)
+TEST_FAILURE_FLAG_ANY  equ  1 << 8
 
 
 %define __gp_type(size)              size%+#bytes
@@ -35,6 +48,11 @@ TEST_VALUE_TYPE_GP.u8   equ  __gp_type( u8.size)    ; General-Purpose register, 
 TEST_VALUE_TYPE_GP.u16  equ  __gp_type(u16.size)    ; General-Purpose register, 16-bits (2 bytes)
 TEST_VALUE_TYPE_GP.u32  equ  __gp_type(u32.size)    ; General-Purpose register, 32-bits (4 bytes)
 TEST_VALUE_TYPE_GP.u64  equ  __gp_type(u64.size)    ; General-Purpose register, 64-bits (8 bytes)
+
+%define __t_gp_type_byte   TEST_VALUE_TYPE_GP.u8
+%define __t_gp_type_word   TEST_VALUE_TYPE_GP.u16
+%define __t_gp_type_dword  TEST_VALUE_TYPE_GP.u32
+%define __t_gp_type_qword  TEST_VALUE_TYPE_GP.u64
 
 TEST_VALUE_TYPE_VEC.v128  equ  __gp_type(v128.size)
 TEST_VALUE_TYPE_VEC.v256  equ  __gp_type(v256.size)
@@ -187,6 +205,12 @@ __get_types_vec
 %define @reg.get_xmm(reg)  __get_xmm_%+reg
 %define @reg.get_ymm(reg)  __get_ymm_%+reg
 %define @reg.get_zmm(reg)  __get_zmm_%+reg
+
+%ifdef AVX512f
+    %define @reg.get_full(reg)  @reg.get_zmm(reg)
+%else
+    %define @reg.get_full(reg)  @reg.get_ymm(reg)
+%endif
 
 
 %endif; __TESTING_FAILURE_INCLUDE__

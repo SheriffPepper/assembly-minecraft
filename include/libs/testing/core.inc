@@ -53,14 +53,11 @@
 ; TEST <TEST-NAME>, <TEST-DESCRIPTION>, <CASE-NUMBER>, <FEATURE-NAME>
 %macro TEST 4
     ; There's no Testing Module defined yet
-    %defstr %%__TEMP_MODULE_TYPE__  %[@module.type]
-    %if %%__TEMP_MODULE_TYPE__ != "_TEST_"
-        %fatal "Test Block is defined outside the Test Module! Did you forget 'test_module <MODULE>'?"
+    __t_require_module "TEST: Test Block is defined outside the Test Module! Did you forget 'test_module <MODULE>'?"
     ; Test Block was already assigned
-    %elifctx __test_block__
-        %fatal "Test Blocks cannot nest! Did you forget 'ENDTEST'?"
+    %ifctx __test_block__
+        %fatal "TEST: Test Blocks cannot nest! Did you forget 'ENDTEST'?"
     %endif
-    %undef  %%__TEMP_MODULE_TYPE__
 
     ; Create Test Block on the context stack
     %push __test_block__
@@ -79,7 +76,7 @@
         %defstr %$__TEMP_STRING_TEST_DESC__  %2
     %endif
 
-        @string  @testcase.description, "Test root"
+        @string  @testcase.description, "The beginning of the Test Block"
 
         @string     @testblock.name,        %$__TEMP_STRING_TEST_NAME__
         @string     @testblock.description, %$__TEMP_STRING_TEST_DESC__
@@ -107,9 +104,7 @@
 
 %macro CASE 1
     ; 'CASE' is used without Test Block
-    %ifnctx __test_block__
-        %fatal "Test Block 'CASE' directive cannot be used outside the Test Block! Did you forget 'TEST'?"
-    %endif
+    __t_require_test "CASE: Test Block 'CASE' directive cannot be used outside the Test Block! Did you forget 'TEST'?"
 
     ; Increment the local 'CASE_NUMBER' counter
     ; Now it's the current index of the Test Block 'CASE' directive
@@ -117,20 +112,15 @@
 
     ; Save the 'CASE' description for the logging purposes
     @string  @testcase.description, %1
-
-    ; ; Create the label for the Test Block case
-    ; @testcase.current:
-    ; We actually never use the CASE label directly
-    ; So, some could argue whether to add the label or not
 %endmacro
 
 
 %macro ENDTEST 0
     ; 'ENDTEST' is used without Test Block
-    %ifnctx __test_block__
-        %fatal "Orphaned 'ENDTEST' directive! Did you forget matching 'TEST'?"
-    %elif %$__CASE_NUMBER__ != %$__CASES_TOTAL__
-        %fatal "The total amount of cases for the Test Block is wrong!"
+    __t_require_test "ENDTEST: Orphaned 'ENDTEST' directive! Did you forget matching 'TEST'?"
+    ; Saved amount of cases doesn't match their real amount
+    %if %$__CASE_NUMBER__ != %$__CASES_TOTAL__
+        %fatal "ENDTEST: The total amount of cases for the Test Block is wrong!"
     %endif
 
     ; Test Block's epilogue
@@ -152,9 +142,8 @@
 
 %macro PRESERVE_REGISTER 1
     ; Register preservation goes into test fixture
-    %ifnctx __test_block__
-        %fatal "There's no fixture found! Did you forget 'TEST' for Test Block?"
-    %endif
+    __t_require_module "PRESERVE_REGISTER: You're trying to preserve register outside the Test Module?"
+    __t_require_test   "PRESERVE_REGISTER: There's no fixture found! Did you forget 'TEST' for Test Block?"
 
     ; We might want to zero-extend the memory to preserve register values,
     ; But since we're gonna use the same size anyways, we may just wave the hand at it
@@ -171,6 +160,10 @@
 
 
 %macro PRESERVE_REGISTERS 1-*
+    ; Register preservation goes into test fixture
+    __t_require_module "PRESERVE_REGISTERS: You're trying to preserve registers outside the Test Module?"
+    __t_require_test   "PRESERVE_REGISTERS: There's no fixture found! Did you forget 'TEST' for Test Block?"
+
     %rep %0
         PRESERVE_REGISTER %1
         %rotate 1
@@ -179,6 +172,10 @@
 
 
 %macro PRESERVE_STACK 0
+    ; Register preservation goes into test fixture
+    __t_require_module "PRESERVE_STACK: You're trying to preserve stack registers outside the Test Module?"
+    __t_require_test   "PRESERVE_STACK: There's no fixture found! Did you forget 'TEST' for Test Block?"
+
     PRESERVE_REGISTERS rsp, rbp
 %endmacro
 

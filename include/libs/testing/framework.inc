@@ -6,6 +6,7 @@
 %include "libs/core/module.inc"
 %include "libs/core/decorators.inc"
 
+%include "libs/testing/internal.inc"
 %include "libs/testing/failure.inc"
 %include "libs/testing/fixture.inc"
 %include "libs/testing/assertions.inc"

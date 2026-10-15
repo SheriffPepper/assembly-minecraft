@@ -1,11 +1,25 @@
 %ifndef __DEFINITIONS_INCLUDE__
 %define __DEFINITIONS_INCLUDE__
 
+;
+; Includes.
+; Standard assembly files are assembled with '-i include/', library ones with '-i include/libs/ -DLIBRARY'.
+; So the path of an include-file depends on who includes it. Use these to get it right:
+;
+;   %include @library("opengl/opengl.inc")    # A file of the library ('include/libs/opengl/opengl.inc')
+;   %include @include("simd.inc")             # A standard file ('include/simd.inc')
+;
+
 %ifdef LIBRARY
-    %include "core/module.inc"
+    %define @library(path)  path
+    %define @include(path)  %strcat("../", path)
 %else
-    %include "libs/core/module.inc"
+    %define @library(path)  %strcat("libs/", path)
+    %define @include(path)  path
 %endif
+
+%include @library("core/module.inc")
+%include @library("core/instructions.inc")
 
 ; Standard definitions include file
 
@@ -74,7 +88,7 @@ u64.MAX_BUFFER_SIZE#hex  equ  16
 
 ; Architecture is officially not 'x64'
 %ifndef x64
-    %error "This code supports only 'x64' architecture, please use different files to compile the project, or pass the '-Dx64' definition to NASM"
+    %fatal "This code supports only 'x64' architecture, please use different files to compile the project, or pass the '-Dx64' definition to NASM"
 %endif
 
 
